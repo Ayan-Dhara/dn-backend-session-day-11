@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 
 // @ts-ignore
-const Login = ({toggleLogin, loginDetail}) => {
-  const [fullName, setFullName] = useState("")
+const Login = ({toggleLogin, loginDetail, setLoginDetail}) => {
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -13,16 +13,16 @@ const Login = ({toggleLogin, loginDetail}) => {
     setCreate(false)
   }, [])
 
-  const submitForm = (event:any) => {
-    if(create){
-      console.log("create", fullName, email, password, confirm)
+  const submitForm = (event: any) => {
+    if (create) {
+      console.log("create", name, email, password, confirm)
       fetch("http://localhost:4000/users/register", {
         method: 'POST', // *GET, POST, PUT, DELETE, etc.
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          fullName,
+          name,
           email,
           password,
           confirm
@@ -30,13 +30,19 @@ const Login = ({toggleLogin, loginDetail}) => {
       }).then(r => r.json())
         .then(json => {
           const token = json.token
-          localStorage.setItem("jwt-token", token)
+          if (token) {
+            localStorage.setItem("jwt-token", token)
+            setLoginDetail({
+              name: json.name,
+              email: json.email,
+              loggedIn: true
+            })
+          }
         })
       // call /user/register
-    }
-    else{
+    } else {
       // call /user/login
-      console.log("create", fullName, email, password, confirm)
+      console.log("create", name, email, password, confirm)
       fetch("http://localhost:4000/users/login", {
         method: 'POST', // *GET, POST, PUT, DELETE, etc.
         headers: {
@@ -48,44 +54,57 @@ const Login = ({toggleLogin, loginDetail}) => {
         }) // body data type must match "Content-Type" header
       }).then(r => r.json())
         .then(json => {
-          console.log(json)
           const token = json.token
-          localStorage.setItem("jwt-token", token)
+          if (token) {
+            localStorage.setItem("jwt-token", token)
+            setLoginDetail({
+              name: json.name,
+              email: json.email,
+              loggedIn: true
+            })
+          }
         })
     }
     event.preventDefault()
   }
+  const logoutUser = () => {
+    localStorage.removeItem("jwt-token")
+    setLoginDetail({
+      loggedIn: false
+    })
+  }
   return (
-    <div className="fixed text-gray-500 top-0 left-0 right-0 bottom-0 bg-popup flex justify-center items-center overflow-auto">
+    <div
+      className="fixed text-gray-500 top-0 left-0 right-0 bottom-0 bg-popup flex justify-center items-center overflow-auto">
       <div className="bottom-0 left-0 right-0 top-0 absolute z-0" onClick={toggleLogin}/>
       <div className="bg-white w-5/6 xl:w-popup z-10 text-center rounded-md">
         {
           loginDetail.loggedIn ? <>
-            <div>
-              {
-                loginDetail.name
-              }
+            <div className="flex justify-center text-center border-t-2 p-4 flex-col" onSubmit={submitForm}>
+              <div>
+                <div className="h-32 w-32 bg-user inline-block bg-no-repeat bg-cover"/>
+              </div>
+              <div className="flex w-5/6 flex-col inline m-auto">
+                <span className="ml-2 p-1 text-2xl">{loginDetail.name}</span>
+              </div>
+              <div className="flex w-5/6 flex-col inline m-auto">
+                <span className="ml-2 p-1">{loginDetail.email}</span>
+              </div>
               <br/>
-              {
-                loginDetail.email
-              }
               <button
                 className="w-5/6 bg-primary rounded-lg text-white m-auto text-center p-2"
-                onClick={() =>{
-                  localStorage.removeItem("jwt-token")
-                }
-                }>Logout
+                onClick={logoutUser}>Logout
               </button>
             </div>
           </> : <>
-            <div className="text-center text-xl p-2">{create?"Create Account":"Login"}</div>
+            <div className="text-center text-xl p-2">{create ? "Create Account" : "Login"}</div>
             <form className="flex justify-center text-center border-t-2 p-3 flex-col" onSubmit={submitForm}>
               {
                 create ?
                   <div className="flex w-5/6 flex-col inline text-left m-auto">
                     <span className="ml-2 p-1">Full Name</span>
                     <input type="text" placeholder="Full Name" required={true}
-                           onChange={(e) => setFullName(e.target.value)} value={fullName}
+                           onChange={(e) => setName(e.target.value)} value={name}
                            className="w-full rounded text-center text-black p-2 focus:border-gray-700 border-2"/>
                   </div> : null
               }
@@ -112,7 +131,7 @@ const Login = ({toggleLogin, loginDetail}) => {
               }
               <br/>
               <button className="w-5/6 bg-primary rounded-lg text-white m-auto text-center p-2">
-                {create?"Create":"Login"}
+                {create ? "Create" : "Login"}
               </button>
             </form>
             <span className="text-gray-400">------ OR ------</span>
@@ -120,7 +139,7 @@ const Login = ({toggleLogin, loginDetail}) => {
             <div className="flex justify-center text-center p-3 flex-col">
               <button
                 className="w-5/6 bg-primary rounded-lg text-white m-auto text-center p-2"
-                onClick={() => setCreate(!create)}> {create?"Login":"Create Account"}
+                onClick={() => setCreate(!create)}> {create ? "Login" : "Create Account"}
               </button>
             </div>
           </>

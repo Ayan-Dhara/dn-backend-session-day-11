@@ -1,19 +1,14 @@
 var express = require('express');
 var router = express.Router();
 const user = require("../models/user")
-const {hash} = require("bcrypt");
+const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken')
+const validateSignUp = require('../middlewares/validateSignUp')
 
-const findPrevious = async (email) => {
-  await product.findAll({
-    where: {email},
-    attributes: ["id", "title", "price", "description", "image"],
-    limit: count
-  })
-}
+const JWT_SECRET = process.env.JWT_SECRET
 
 /* POST users listing. */
-router.post('/register', async (req, res) => {
+router.post('/register', validateSignUp, async (req, res) => {
   const body = req.body
   console.log(body)
   const pUser = await user.findOne({
@@ -27,17 +22,23 @@ router.post('/register', async (req, res) => {
         message: "email registered"
       })
   } else {
-    await (await user.create({
-      name: body.fullName,
+    body.name = body.name || ""
+    const passwordHash = bcrypt.hashSync(body.password, 10)
+    const userData = {
+      name: body.name,
       email: body.email,
-      password: body.password
-    })).save()
+      password: passwordHash
+    }
+    console.log(userData)
+    await (await user.create(userData)).save()
     res.send({
+      name: body.name,
+      email: body.email,
       token: jwt.sign({
         data: JSON.stringify({
           email: body.email
         })
-      }, 'my-secret', { expiresIn: 60 * 60 })
+      }, JWT_SECRET, { expiresIn: 60 * 60 })
     })
   }
 })
@@ -53,14 +54,16 @@ router.post('/login', async (req, res) => {
   if (pUser) {
     console.log(pUser)
     const datas = pUser.dataValues
-    if(body.password === datas.password){
+    if(bcrypt.compareSync(body.password, datas.password)){
       res.status(200)
         .send({
+          email: datas.email,
+          name: datas.name,
           token: jwt.sign({
             data: JSON.stringify({
-              email: body.email
+              email: datas.email
             })
-          }, 'my-secret', { expiresIn: 60 * 60 })
+          }, JWT_SECRET, { expiresIn: 60 * 60 })
         })
     }
     else {
@@ -81,7 +84,7 @@ router.get('/verify', async (req, res) => {
   const authHeader = req.headers.authorization
   console.log(authHeader)
   try {
-    const data = jwt.verify(authHeader, 'my-secret');
+    const data = jwt.verify(authHeader, JWT_SECRET);
     const json = JSON.parse(data.data)
     const pUser = await user.findOne({
       where: {

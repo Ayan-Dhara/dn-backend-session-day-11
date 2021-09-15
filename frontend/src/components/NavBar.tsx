@@ -26,6 +26,9 @@ const NavBar = () => {
               loggedIn: true
             })
           }
+          else {
+            localStorage.removeItem("jwt-token")
+          }
         })
   }, [])
 
@@ -58,7 +61,7 @@ const NavBar = () => {
                placeholder="search"/>
       </div>
       {
-        login ? <Login toggleLogin={toggleLogin} loginDetail={loginDetail}/> : null
+        login ? <Login toggleLogin={toggleLogin} loginDetail={loginDetail} setLoginDetail={setLoginDetail}/> : null
       }
     </nav>
   )
