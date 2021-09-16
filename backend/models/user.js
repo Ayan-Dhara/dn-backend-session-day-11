@@ -1,7 +1,7 @@
 const {DataTypes, Model} = require('sequelize');
 const sequelize = require("../utills/database")
 
-module.exports = sequelize.define("products", {
+module.exports = sequelize.define("users", {
   // product id
   id: {
     type: DataTypes.BIGINT,
